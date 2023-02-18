@@ -4,55 +4,12 @@ import json
 from crud_api import OandaAPI
 
 
-def create_order(account_id, instrument, units, stop_loss, take_profit):
-    url = BASE_URL + account_id + "/orders"
-    headers = {
-        "Authorization": "Bearer " + API_KEY,
-        "Content-Type": "application/json"
-    }
-    data = {
-        "order": {
-            "instrument": instrument,
-            "timeInForce": "FOK",
-            "units": units,
-            "type": "MARKET",
-            "stopLossOnFill": {
-                "price": stop_loss
-            },
-            "takeProfitOnFill": {
-                "price": take_profit
-            }
-        }
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.HTTPError as error:
-        return {"error": error}
-
-
-def get_open_trades(account_id):
-    url = BASE_URL + "/v3/accounts/" + account_id + "/trades"
-    headers = {
-        "Authorization": "Bearer " + API_KEY,
-        "Content-Type": "application/json"
-    }
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.HTTPError as error:
-        return {"error": error}
-
-
 def duplicate_trade(trade, destination_account_id):
     stop_loss = trade["stopLossOrder"]["price"]
     take_profit = trade["takeProfitOrder"]["price"]
     try:
-        response = create_order(
-            destination_account_id, trade["instrument"], trade["currentUnits"], stop_loss, take_profit)
+        response = OandaAPI(account_id=destination_account_id).create_order(
+            trade["instrument"], trade["currentUnits"], stop_loss, take_profit)
         print(
             f"Trade {trade['id']} duplicated in target account with response: {response}")
     except Exception as e:
