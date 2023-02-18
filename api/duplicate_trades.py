@@ -16,27 +16,6 @@ def duplicate_trade(trade, destination_account_id):
         print(f"Error duplicating trade {trade['id']}: {str(e)}")
 
 
-def update_order(account_id, order_id, stop_loss):
-    data = {
-        "order": {
-            "timeInForce": "GTC",
-            "price": stop_loss,
-            "type": "STOP_LOSS",
-            "tradeID": "6368"
-        }
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer MOCKED_API_KEY"
-    }
-    response = requests.put(
-        f"{BASE_URL}{account_id}/orders/{order_id}", headers=headers, data=json.dumps(data))
-    if response.status_code != 200:
-        raise Exception(f"Failed to update order: {response.text}")
-    return response.json()
-
-
 if __name__ == "__main__":
     print("Duplication Trading Algorithm started")
 
