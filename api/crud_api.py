@@ -134,13 +134,14 @@ class OandaAPI:
 
     # UPDATE
 
-    def update_stoploss_order(self, instrument, stop_loss):
+    def update_stoploss_order_v1(self, instrument, stop_loss):
         """
         Update the stop loss of a given order in Oanda API by only through instrument
         """
 
-        stoploss_order_id = self.get_stoploss_order_id(instrument)
-        trade_id = self.get_instrument_trade(instrument)["id"]
+        trade = self.get_instrument_trade(instrument)
+        trade_id = trade["id"]
+        stoploss_order_id = trade["stopLossOrder"]["id"]
 
         url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
 
