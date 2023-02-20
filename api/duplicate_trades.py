@@ -1,6 +1,4 @@
-import requests
-from constants import API_KEY, BASE_URL, SOURCE_ACCOUNT, DESTINATION_ACCOUNT
-import json
+from constants import SOURCE_ACCOUNT, DESTINATION_ACCOUNT
 from crud_api import OandaAPI
 
 
