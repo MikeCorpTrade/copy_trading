@@ -15,7 +15,7 @@ def duplicate_trade(trade, destination_account_id):
 
 
 if __name__ == "__main__":
-    print("Duplication Trading Algorithm started")
+    print("Duplication Trading Algorithm started...")
 
     # Example usage
     source_account_id = SOURCE_ACCOUNT
