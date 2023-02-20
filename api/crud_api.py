@@ -59,9 +59,9 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error getting order ID {order_id}: {err}")
 
-    def get_instrument_trade_id(self, instrument):
+    def get_instrument_trade(self, instrument):
         """
-        Get the ID of an opening trade of an instrument from Oanda API
+        Get the opening trade object of an instrument from Oanda API
         """
         url = f"{BASE_URL}{self.account_id}/trades"
 
@@ -70,7 +70,7 @@ class OandaAPI:
             data = json.loads(response.text)
             for trade in data['trades']:
                 if trade['instrument'] == instrument:
-                    return trade['id']
+                    return trade
         except requests.exceptions.HTTPError as err:
             print(
                 f"Error retrieving trade ID for {instrument} : {err}")
@@ -136,7 +136,7 @@ class OandaAPI:
 
     def update_stoploss_order(self, instrument, stop_loss):
         """
-        Update the stop loss of a given order in Oanda API
+        Update the stop loss of a given order in Oanda API by only through instrument
         """
 
         stoploss_order_id = self.get_stoploss_order_id(instrument)
@@ -161,7 +161,31 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
+    def update_stoploss_order_v2(self, trade_id, stoploss_order_id, stop_loss):
+        """
+        Version 2 of the update_stoploss_order : Update the stop loss of a given order in Oanda API
+        Please, provide the trade_id, the stoploss_order_id and the new stop_loss.
+        """
+
+        url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
+
+        data = {
+            "order": {
+                "timeInForce": "GTC",
+                "price": stop_loss,
+                "type": "STOP_LOSS",
+                "tradeID": trade_id
+            }
+        }
+
+        try:
+            response = requests.put(
+                url, headers=self.headers, data=json.dumps(data))
+            response.raise_for_status()
+            print(f"Stop loss updated for trade ID {trade_id} to {stop_loss}")
+        except requests.exceptions.HTTPError as err:
+            print(f"Error updating stop loss for trade ID {trade_id}: {err}")
+
 
 if __name__ == "__main__":
-
     print("Hello")
