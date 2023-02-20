@@ -75,21 +75,6 @@ class OandaAPI:
             print(
                 f"Error retrieving trade ID for {instrument} : {err}")
 
-    def get_trade_id(self, trade_id):
-        """
-        Get the ID of a trade from Oanda API (opened or closed)
-        """
-        url = f"{BASE_URL}{self.account_id}/trades/{trade_id}"
-
-        try:
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            trade = response.json()["trade"]
-            return trade
-        except requests.exceptions.HTTPError as err:
-            print(
-                f"Error retrieving trade ID {trade_id} : {err}")
-
     def get_stoploss_order_id(self, instrument):
         """
         Get the ID of the stoploss order of an instrument from Oanda API
@@ -149,10 +134,14 @@ class OandaAPI:
 
     # UPDATE
 
-    def update_stoploss_order(self, stoploss_order_id, stop_loss, trade_id):
+    def update_stoploss_order(self, instrument, stop_loss):
         """
         Update the stop loss of a given order in Oanda API
         """
+
+        stoploss_order_id = self.get_stoploss_order_id(instrument)
+        trade_id = self.get_instrument_trade_id(instrument)
+
         url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
 
         data = {

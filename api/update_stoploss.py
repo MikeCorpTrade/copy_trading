@@ -23,9 +23,9 @@ def update_stoploss(order_id, instrument):
     # Update the stop loss if necessary
     if risk_reward_ratio == 1.0:
         OandaAPI(API_KEY, BASE_URL).update_stoploss_order(
-            order_id, current_price)
+            instrument, current_price)
     elif risk_reward_ratio >= 2.0:
         n = int(risk_reward_ratio)
         new_stop_loss = entry_price + (entry_price - stop_loss) * (n-1)
         OandaAPI(API_KEY, BASE_URL).update_stoploss_order(
-            order_id, new_stop_loss)
+            instrument, new_stop_loss)
