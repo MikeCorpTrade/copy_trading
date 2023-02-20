@@ -140,7 +140,7 @@ class OandaAPI:
         """
 
         stoploss_order_id = self.get_stoploss_order_id(instrument)
-        trade_id = self.get_instrument_trade_id(instrument)
+        trade_id = self.get_instrument_trade(instrument)["id"]
 
         url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
 
