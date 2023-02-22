@@ -15,18 +15,22 @@ def update_stoploss(trade):
     stop_loss = float(trade["stopLossOrder"]["price"])
     take_profit = float(trade["takeProfitOrder"]["price"])
     risk = entry_price - stop_loss
-    reward = take_profit - entry_price
+    reward = current_price - entry_price
     if risk == 0:  # Avoid division by zero
         risk_reward_ratio = None
     else:
         risk_reward_ratio = abs(reward / risk)
 
+    # Calculate n
+    n = int(risk_reward_ratio)
+
+    # TODO Check if the order is buy or sell (for the direction of the stoploss)
+    new_stop_loss = entry_price + (entry_price - stop_loss) * (n - 1)
+
     # Update the stop loss if necessary
-    if risk_reward_ratio == 1.0:
-        OandaAPI(API_KEY, BASE_URL).update_stoploss_order_v2(trade_id, stoploss_order_id, current_price)
-    elif risk_reward_ratio >= 2.0:
-        n = int(risk_reward_ratio)
-        new_stop_loss = entry_price + (entry_price - stop_loss) * (n-1)
+    if 0.99 <= risk_reward_ratio < 1.99 and stop_loss != entry_price:
+        OandaAPI(API_KEY, BASE_URL).update_stoploss_order_v2(trade_id, stoploss_order_id, entry_price)
+    elif 1.99 <= risk_reward_ratio < n and n >= 2 and stop_loss != new_stop_loss:
         OandaAPI(API_KEY, BASE_URL).update_stoploss_order_v2(trade_id, stoploss_order_id, new_stop_loss)
 
 
