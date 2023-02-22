@@ -1,33 +1,23 @@
-import requests
-import json
-
-# Replace with your own values
-ACCOUNT_ID = "123456"
-ORDER_ID = "123456"
-API_KEY = "your_api_key"
+from crud_api import OandaAPI
 
 
-def risk_reward_ratio(api_key, account_id, order_id):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    response = requests.get(
-        f"https://api-fxpractice.oanda.com/v3/accounts/{account_id}/orders/{order_id}",
-        headers=headers
-    )
-    response_data = json.loads(response.text)
-    stop_loss = float(response_data["order"]["stopLossOnFill"]["price"])
-    take_profit = float(response_data["order"]["takeProfitOnFill"]["price"])
-    entry_price = float(response_data["order"]["price"])
-    units = float(response_data["order"]["units"])
-    if units < 0:
-        pips = (entry_price - stop_loss) / 0.0001
-        risk = abs(units) * pips * 10
-        reward = abs(units) * (take_profit - entry_price) / 0.0001 * 10
+def risk_reward_ratio(instrument):
+    trade = OandaAPI().get_instrument_trade(instrument=instrument)
+
+    # Calculate the current risk reward ratio
+    entry_price = float(trade["price"])
+    stop_loss = float(trade["stopLossOrder"]["price"])
+    take_profit = float(trade["takeProfitOrder"]["price"])
+    risk = entry_price - stop_loss
+    reward = take_profit - entry_price
+    if risk == 0:  # Avoid division by zero
+        risk_reward = None
     else:
-        pips = (take_profit - entry_price) / 0.0001
-        risk = abs(units) * (entry_price - stop_loss) / 0.0001 * 10
-        reward = abs(units) * pips * 10
-    ratio = reward / risk
-    return ratio
+        risk_reward = abs(reward / risk)
+
+    return risk_reward
+
+
+if __name__ == "__main__":
+    ratio = risk_reward_ratio("EUR_USD")
+    print(ratio)
