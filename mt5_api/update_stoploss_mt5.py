@@ -49,9 +49,8 @@ def update_stoploss_mt5(instrument):
     # Calculate the current risk reward ratio
     entry_price = float(position.price_open)
     stop_loss = float(position.sl)
-    take_profit = float(position.tp)
     risk = entry_price - stop_loss
-    reward = take_profit - entry_price
+    reward = current_price - entry_price
     if risk == 0:  # Avoid division by zero
         risk_reward_ratio = None
     else:
