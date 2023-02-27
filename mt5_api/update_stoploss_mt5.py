@@ -12,17 +12,44 @@ def get_current_price(instrument):
     return prices[0].close
 
 
-def update_stoploss_mt5(order_id, instrument):
+def update_order(*kwargs):
+    pass
+
+
+def get_open_trade(instrument):
+    position = mt5.positions_get(symbol=instrument)
+    # Return the first position tuple (and the only one)
+    return position[0]
+
+
+def mt5_request(position, action=mt5.TRADE_ACTION_SLTP):
+    request = {
+        "action": action,
+        "symbol": position.symbol,
+        "type": position.type,
+        "position": position.ticket,
+        "sl": position.sl,
+        "tp": position.tp,
+        "magic": position.magic,
+        "comment": position.comment,
+    }
+
+    return request
+
+
+def update_stoploss_mt5(instrument):
     # Get the current market price
     current_price = get_current_price(instrument)
 
     # Get the order details
-    order = get_order(order_id)
+    position = get_open_trade(instrument)
+
+    position_type = "buy" if position.type == mt5.POSITION_TYPE_BUY else "sell"
 
     # Calculate the current risk reward ratio
-    entry_price = float(order["price"])
-    stop_loss = float(order["stopLossOnFill"]["price"])
-    take_profit = float(order["takeProfitOnFill"]["price"])
+    entry_price = float(position.price_open)
+    stop_loss = float(position.sl)
+    take_profit = float(position.tp)
     risk = entry_price - stop_loss
     reward = take_profit - entry_price
     if risk == 0:  # Avoid division by zero
@@ -30,13 +57,20 @@ def update_stoploss_mt5(order_id, instrument):
     else:
         risk_reward_ratio = abs(reward / risk)
 
-    # Update the stop loss if necessary
-    if risk_reward_ratio == 1.0:
-        update_order(order_id, current_price)
-    elif risk_reward_ratio == 2.0:
-        new_stop_loss = entry_price + (entry_price - stop_loss)
-        update_order(order_id, new_stop_loss)
-    elif risk_reward_ratio > 2.0:
-        n = int(risk_reward_ratio)
+    # Calculate n
+    n = int(risk_reward_ratio)
+
+    # Check if the order is buy or sell (for the direction of the stoploss)
+    if position_type == "buy":
         new_stop_loss = entry_price + (entry_price - stop_loss) * (n - 1)
-        update_order(order_id, new_stop_loss)
+    else:
+        new_stop_loss = entry_price - (stop_loss - entry_price) * (n - 1)
+
+    new_request = mt5_request(position)
+    # Update the stop loss if necessary
+    if 1 <= risk_reward_ratio < 2 and stop_loss != entry_price:
+        new_request["sl"] = entry_price
+        mt5.order_send(new_request)
+    elif 2 <= n <= risk_reward_ratio < n + 1 and stop_loss != new_stop_loss:
+        new_request["sl"] = new_stop_loss
+        mt5.order_send(new_request)
