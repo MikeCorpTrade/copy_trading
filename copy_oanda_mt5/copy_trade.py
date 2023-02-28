@@ -1,9 +1,7 @@
-import requests
-import json
+import MetaTrader5 as mt5
 
 # Oanda trade order details
 oanda_order = {
-    "order": {
         "units": 1000,
         "instrument": "EUR_USD",
         "timeInForce": "FOK",
@@ -17,15 +15,14 @@ oanda_order = {
             "price": 1.20
         }
     }
-}
 
 
-def map_order_mt5(trade):
+def map_order_oanda_to_mt5(trade):
     # Map the Oanda trade order to MT5 format
     mt5_trade_order = {
         "volume": trade["units"],
         "symbol": trade["instrument"],
-        "type": "OP_BUY" if trade["units"] > 0 else "OP_SELL",
+        "type": mt5.ORDER_TYPE_BUY if trade["units"] > 0 else mt5.ORDER_TYPE_SELL,
         "price": 0,
         "sl": trade["stopLossOnFill"]["price"],
         "tp": trade["takeProfitOnFill"]["price"],
@@ -33,24 +30,9 @@ def map_order_mt5(trade):
         "magic": 123456,
         "deviation": 200
     }
-
-    # Place the trade order using MT5 API
-    mt5_api_url = "https://api.mt5.com/v1/trade/order/place"
-    mt5_api_key = "your_mt5_api_key"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + mt5_api_key
-    }
-    response = requests.post(mt5_api_url, headers=headers,
-                             data=json.dumps(mt5_trade_order))
-
-    # Check the response status and retrieve the trade details
-    if response.status_code == 200:
-        trade_details = response.json()
-        print("Trade placed successfully: ", trade_details)
-    else:
-        print("Failed to place trade: ", response.text)
+    return mt5_trade_order
 
 
 if __name__ == "__main__":
-    map_order_mt5(trade=oanda_order)
+    mt5_order = map_order_oanda_to_mt5(trade=oanda_order)
+    print(mt5_order)
