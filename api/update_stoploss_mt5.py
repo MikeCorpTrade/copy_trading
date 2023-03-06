@@ -12,10 +12,6 @@ def get_current_price(instrument):
     return prices[0].close
 
 
-def update_order(*kwargs):
-    pass
-
-
 def get_open_trade(instrument):
     position = mt5.positions_get(symbol=instrument)
     # Return the first position tuple (and the only one)

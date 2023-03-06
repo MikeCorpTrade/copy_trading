@@ -1,4 +1,4 @@
-from crud_api import OandaAPI
+from api.crud_api import OandaAPI
 
 
 def risk_reward_ratio(instrument):

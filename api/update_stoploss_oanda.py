@@ -1,4 +1,4 @@
-from crud_api import OandaAPI
+from api.crud_api import OandaAPI
 from constants import SOURCE_ACCOUNT, BASE_URL, API_KEY
 
 

@@ -1,26 +1,14 @@
 import MetaTrader5 as mt5
+from api.mt5_constants import mt5_COEFF, MAGIC, DEVIATION
+from api.oanda_mt5_symbols import oanda_mt5_symbols
 
-# Oanda trade order details
-oanda_order = {
-        "units": 1000,
-        "instrument": "EUR_USD",
-        "timeInForce": "FOK",
-        "type": "MARKET",
-        "positionFill": "DEFAULT",
-        "stopLossOnFill": {
-            "timeInForce": "GTC",
-            "price": 1.10
-        },
-        "takeProfitOnFill": {
-            "price": 1.20
-        }
-    }
 
-mt5_coeff = 9.80E-6
-
-oanda_mt5_symbols = {
-    "EUR_USD": "EURUSD"
-}
+def login_mt5():
+    try:
+        authorized = mt5.initialize()
+        print(f"authorized accepted: {authorized}")
+    except Exception as error:
+        print(f"Failed to initialize MT5: {error}")
 
 
 def map_order_oanda_to_mt5(trade):
@@ -30,21 +18,16 @@ def map_order_oanda_to_mt5(trade):
 
     mt5_trade_order = {
         "action": mt5.TRADE_ACTION_DEAL,
-        "volume": round(trade["units"]*mt5_coeff, 2),
+        "volume": round(trade["units"] * mt5_COEFF, 2),
         "symbol": mt5_SYMBOL,
         "type": mt5.ORDER_TYPE_BUY if trade["units"] > 0 else mt5.ORDER_TYPE_SELL,
         "price": mt5.symbol_info_tick(mt5_SYMBOL).ask,
         "sl": trade["stopLossOnFill"]["price"],
         "tp": trade["takeProfitOnFill"]["price"],
         "comment": "",
-        "magic": 123456,
-        "deviation": 200,
+        "magic": MAGIC,
+        "deviation": DEVIATION,
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
     }
     return mt5_trade_order
-
-
-if __name__ == "__main__":
-    mt5_order = map_order_oanda_to_mt5(trade=oanda_order)
-    print(mt5_order)
