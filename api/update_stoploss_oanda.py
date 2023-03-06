@@ -1,5 +1,5 @@
 from api.crud_api import OandaAPI
-from constants import SOURCE_ACCOUNT, BASE_URL, API_KEY
+from constants import SOURCE_ACCOUNT, DESTINATION_ACCOUNT, BASE_URL, API_KEY
 
 
 def update_stoploss(trade):
@@ -38,18 +38,21 @@ def update_stoploss(trade):
         OandaAPI(API_KEY, BASE_URL).update_stoploss_order_v2(trade_id, stoploss_order_id, new_stop_loss)
 
 
+account_ids = [SOURCE_ACCOUNT, DESTINATION_ACCOUNT]
+
 if __name__ == "__main__":
     print("Update Stoploss Algorithm started...")
 
     while True:
 
         try:
-            # Check for open trades in the source account
-            trades = OandaAPI(account_id=SOURCE_ACCOUNT).get_open_trades()
+            for account_id in account_ids:
+                # Check for open trades in the source account
+                trades = OandaAPI(account_id=account_id).get_open_trades()
 
-            for trade in trades:
-                # Update the stoploss of a trade
-                update_stoploss(trade)
+                for trade in trades:
+                    # Update the stoploss of a trade
+                    update_stoploss(trade)
 
         except Exception as error:
             print("An error occurred:", error)

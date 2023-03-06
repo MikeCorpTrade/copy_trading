@@ -1,19 +1,16 @@
 import MetaTrader5 as mt5
 
+from api.map_oanda_mt5 import login_mt5
+from api.mt5_accounts import accounts
 
-def get_current_price(instrument):
-    if not mt5.initialize():
-        print("initialize() failed")
-        return None
 
-    prices = mt5.copy_rates_from_pos(instrument, mt5.TIMEFRAME_M1, 0, 1)
-    mt5.shutdown()
-
+def get_current_price(symbol):
+    prices = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 1)
     return prices[0].close
 
 
-def get_open_trade(instrument):
-    position = mt5.positions_get(symbol=instrument)
+def get_open_trade(symbol):
+    position = mt5.positions_get(symbol=symbol)
     # Return the first position tuple (and the only one)
     return position[0]
 
@@ -33,18 +30,17 @@ def mt5_request(position, action=mt5.TRADE_ACTION_SLTP):
     return request
 
 
-def update_stoploss_mt5(instrument):
+def update_stoploss_mt5(open_trade):
+
+    symbol = open_trade.symbol
+
     # Get the current market price
-    current_price = get_current_price(instrument)
-
-    # Get the order details
-    position = get_open_trade(instrument)
-
-    position_type = "buy" if position.type == mt5.POSITION_TYPE_BUY else "sell"
+    current_price = open_trade.price_current
+    position_type = "buy" if open_trade.type == mt5.POSITION_TYPE_BUY else "sell"
 
     # Calculate the current risk reward ratio
-    entry_price = float(position.price_open)
-    stop_loss = float(position.sl)
+    entry_price = float(open_trade.price_open)
+    stop_loss = float(open_trade.sl)
     risk = entry_price - stop_loss
     reward = current_price - entry_price
     if risk == 0:  # Avoid division by zero
@@ -61,7 +57,7 @@ def update_stoploss_mt5(instrument):
     else:
         new_stop_loss = entry_price - (stop_loss - entry_price) * (n - 1)
 
-    new_request = mt5_request(position)
+    new_request = mt5_request(open_trade)
     # Update the stop loss if necessary
     if 1 <= risk_reward_ratio < 2 and stop_loss != entry_price:
         new_request["sl"] = entry_price
@@ -69,3 +65,14 @@ def update_stoploss_mt5(instrument):
     elif 2 <= n <= risk_reward_ratio < n + 1 and stop_loss != new_stop_loss:
         new_request["sl"] = new_stop_loss
         mt5.order_send(new_request)
+
+
+if __name__ == "__main__":
+
+    login_mt5()
+
+    for account in accounts:
+        mt5.login(login=account.login, password=account.password, server=account.server)
+        open_trades = mt5.positions_get()
+        for open_trade in open_trades:
+            update_stoploss_mt5(open_trade)
