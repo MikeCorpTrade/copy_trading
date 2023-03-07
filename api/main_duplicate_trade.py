@@ -23,9 +23,7 @@ if __name__ == "__main__":
 
             for trade in trades:
                 # Duplicate the trade in the OANDA destination account
-                # TODO: add a security to check if the order was created in a range of time
-                #  ( if the trade was opened more than 3sec ago for example, then don't duplicate it )
-
+                # TODO: add script to close all opening positions for security
                 if trade['instrument'] not in target_trade_instruments and not is_old_trade(trade):
                     duplicate_trade(trade, destination_account_id)
                     duplicate_to_mt5(oanda_trade=trade, accounts=accounts)
