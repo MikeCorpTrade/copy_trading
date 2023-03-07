@@ -1,5 +1,7 @@
 import requests
 import json
+import datetime
+import pytz
 from constants import BASE_URL, API_KEY, SOURCE_ACCOUNT
 
 account_id = SOURCE_ACCOUNT
@@ -188,5 +190,39 @@ class OandaAPI:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
 
-if __name__ == "__main__":
-    print("Hello")
+def duplicate_trade(trade, destination_account_id):
+    stop_loss = trade["stopLossOrder"]["price"]
+    take_profit = trade["takeProfitOrder"]["price"]
+    try:
+        response = OandaAPI(account_id=destination_account_id).create_order(
+            trade["instrument"], trade["currentUnits"], stop_loss, take_profit)
+        print(
+            f"Trade {trade['id']} duplicated in target account with response: {response}")
+    except Exception as e:
+        print(f"Error duplicating trade {trade['id']}: {str(e)}")
+
+
+def is_old_trade(trade, time_limit=2) -> bool:
+    # get the time the trade was opened
+    trade_time_str = trade["openTime"]
+
+    # parse the datetime string without microseconds
+    trade_time_obj = datetime.datetime.strptime(trade_time_str[:-4], "%Y-%m-%dT%H:%M:%S.%f")
+
+    # add the microseconds component manually
+    microseconds = int(trade_time_str[-4:-1]) * 1000  # convert to microseconds
+    trade_time_obj = trade_time_obj.replace(microsecond=microseconds)
+
+    # set the timezone to UTC
+    trade_time_obj = trade_time_obj.replace(tzinfo=pytz.UTC)
+
+    # get the current time
+    current_time = datetime.datetime.now(pytz.UTC)
+
+    # calculate the time difference between the trade time and current time
+    time_diff = (current_time - trade_time_obj).total_seconds()
+
+    if time_diff > time_limit:
+        return True
+
+    return False

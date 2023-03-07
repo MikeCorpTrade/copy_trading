@@ -47,6 +47,7 @@ def duplicate_to_mt5(oanda_trade, accounts):
         try:
             mt5.login(login=account.login, password=account.password, server=account.server)
             order_result = mt5.order_send(mt5_trade_request)
-            print(f"duplicated success in MT5 with response: {order_result}")
+            print(f'Trade {oanda_trade["id"]} duplicated success in MT5 account {account.login} '
+                  f'with response: {order_result.comment}')
         except Exception as e:
-            print(f"Error duplicating trade {oanda_trade['instrument']}: {str(e)}")
+            print(f'Error duplicating trade {oanda_trade["instrument"]}: {str(e)}')
