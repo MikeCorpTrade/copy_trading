@@ -1,5 +1,7 @@
 import requests
 import json
+import datetime
+import pytz
 from constants import BASE_URL, API_KEY, SOURCE_ACCOUNT
 
 account_id = SOURCE_ACCOUNT
@@ -59,9 +61,9 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error getting order ID {order_id}: {err}")
 
-    def get_instrument_trade_id(self, instrument):
+    def get_instrument_trade(self, instrument):
         """
-        Get the ID of an opening trade of an instrument from Oanda API
+        Get the opening trade object of an instrument from Oanda API
         """
         url = f"{BASE_URL}{self.account_id}/trades"
 
@@ -70,25 +72,10 @@ class OandaAPI:
             data = json.loads(response.text)
             for trade in data['trades']:
                 if trade['instrument'] == instrument:
-                    return trade['id']
+                    return trade
         except requests.exceptions.HTTPError as err:
             print(
                 f"Error retrieving trade ID for {instrument} : {err}")
-
-    def get_trade_id(self, trade_id):
-        """
-        Get the ID of a trade from Oanda API (opened or closed)
-        """
-        url = f"{BASE_URL}{self.account_id}/trades/{trade_id}"
-
-        try:
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            trade = response.json()["trade"]
-            return trade
-        except requests.exceptions.HTTPError as err:
-            print(
-                f"Error retrieving trade ID {trade_id} : {err}")
 
     def get_stoploss_order_id(self, instrument):
         """
@@ -149,10 +136,40 @@ class OandaAPI:
 
     # UPDATE
 
-    def update_stoploss_order(self, stoploss_order_id, stop_loss, trade_id):
+    def update_stoploss_order_v1(self, instrument, stop_loss):
         """
-        Update the stop loss of a given order in Oanda API
+        Update the stop loss of a given order in Oanda API by only through instrument
         """
+
+        trade = self.get_instrument_trade(instrument)
+        trade_id = trade["id"]
+        stoploss_order_id = trade["stopLossOrder"]["id"]
+
+        url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
+
+        data = {
+            "order": {
+                "timeInForce": "GTC",
+                "price": stop_loss,
+                "type": "STOP_LOSS",
+                "tradeID": trade_id
+            }
+        }
+
+        try:
+            response = requests.put(
+                url, headers=self.headers, data=json.dumps(data))
+            response.raise_for_status()
+            print(f"Stop loss updated for trade ID {trade_id} to {stop_loss}")
+        except requests.exceptions.HTTPError as err:
+            print(f"Error updating stop loss for trade ID {trade_id}: {err}")
+
+    def update_stoploss_order_v2(self, trade_id, stoploss_order_id, stop_loss):
+        """
+        Version 2 of the update_stoploss_order : Update the stop loss of a given order in Oanda API
+        Please, provide the trade_id, the stoploss_order_id and the new stop_loss.
+        """
+
         url = f"{BASE_URL}{self.account_id}/orders/{stoploss_order_id}"
 
         data = {
@@ -173,6 +190,39 @@ class OandaAPI:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
 
-if __name__ == "__main__":
+def duplicate_trade(trade, destination_account_id):
+    stop_loss = trade["stopLossOrder"]["price"]
+    take_profit = trade["takeProfitOrder"]["price"]
+    try:
+        response = OandaAPI(account_id=destination_account_id).create_order(
+            trade["instrument"], trade["currentUnits"], stop_loss, take_profit)
+        print(
+            f"Trade {trade['id']} duplicated in target account with response: {response}")
+    except Exception as e:
+        print(f"Error duplicating trade {trade['id']}: {str(e)}")
 
-    print("Hello")
+
+def is_old_trade(trade, time_limit=2) -> bool:
+    # get the time the trade was opened
+    trade_time_str = trade["openTime"]
+
+    # parse the datetime string without microseconds
+    trade_time_obj = datetime.datetime.strptime(trade_time_str[:-4], "%Y-%m-%dT%H:%M:%S.%f")
+
+    # add the microseconds component manually
+    microseconds = int(trade_time_str[-4:-1]) * 1000  # convert to microseconds
+    trade_time_obj = trade_time_obj.replace(microsecond=microseconds)
+
+    # set the timezone to UTC
+    trade_time_obj = trade_time_obj.replace(tzinfo=pytz.UTC)
+
+    # get the current time
+    current_time = datetime.datetime.now(pytz.UTC)
+
+    # calculate the time difference between the trade time and current time
+    time_diff = (current_time - trade_time_obj).total_seconds()
+
+    if time_diff > time_limit:
+        return True
+
+    return False
