@@ -107,6 +107,20 @@ class OandaAPI:
         except requests.exceptions.HTTPError as error:
             return {"Error getting open Trades": error}
 
+    def get_account_balance(self):
+        """
+        Get the balance of an account from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}"
+
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            balance_account = response.json()["account"]["balance"]
+            return balance_account
+        except requests.exceptions.HTTPError as error:
+            return {"Error getting open Trades": error}
+
     # CREATE
 
     def create_order(self, instrument, units, stop_loss, take_profit):
@@ -189,6 +203,26 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
+    # DELETE
+    def close_positions(self, instrument, type):
+        """
+        Close all open positions of an account from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}/positions/{instrument}/close"
+
+        if type == "buy":
+            data = {"longUnits": "ALL"}
+        else:
+            data = {"shortUnits": "ALL"}
+
+        try:
+            response = requests.put(
+                url, headers=self.headers, data=json.dumps(data))
+            response.raise_for_status()
+            print(f"Position closed for instrument {instrument}")
+        except requests.exceptions.HTTPError as err:
+            print(f"Error closing position for instrument {instrument}: {err}")
+
 
 def duplicate_trade(trade, destination_account_id):
     stop_loss = trade["stopLossOrder"]["price"]
@@ -226,3 +260,9 @@ def is_old_trade(trade, time_limit=2) -> bool:
         return True
 
     return False
+
+
+if __name__ == "__main__":
+    balance = OandaAPI().get_account_balance()
+    corrected_balance = round(float(balance), 2)
+    print(corrected_balance)
