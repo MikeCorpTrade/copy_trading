@@ -107,6 +107,21 @@ class OandaAPI:
         except requests.exceptions.HTTPError as error:
             return {"Error getting open Trades": error}
 
+    def get_list_currencies(self):
+        """
+        Get a list of currencies tradeable from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}/instruments"
+
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            instruments = response.json()['instruments']
+            forex_pairs = [instrument['name'] for instrument in instruments if instrument['type'] == 'CURRENCY']
+            return forex_pairs
+        except requests.exceptions.HTTPError as err:
+            print(f"Error getting list of currencies : {err}")
+
     def get_account_balance(self):
         """
         Get the balance of an account from Oanda API
@@ -323,7 +338,7 @@ def calculate_forex_pips(open_price, stop_loss, symbol, decimal_places=4):
     return round(pips, decimal_places)
 
 
-def calculate_indices_pips(open_price, stop_loss, decimal_places=2, pip_value=1):
+def calculate_indices_pips(open_price, stop_loss, symbol, decimal_places=2, pip_value=1):
     """
     Calculates the number of pips between the stop loss and open price for indices like SP500, NASDAQ100, etc.
 
@@ -336,6 +351,8 @@ def calculate_indices_pips(open_price, stop_loss, decimal_places=2, pip_value=1)
     Returns:
     float: The number of pips between the stop loss and open price.
     """
+    type(decimal_places)
+
     pip_multiplier = 10 ** decimal_places
 
     # Calculate the number of pips based on the pip value and decimal places
@@ -345,22 +362,33 @@ def calculate_indices_pips(open_price, stop_loss, decimal_places=2, pip_value=1)
     return round(pips, decimal_places)
 
 
-def calculate_percentage_risk(balance, pip_value, pips):
+def calculate_percentage_risk(balance: float, pip_value, pips) -> float:
     percentage_risk = (pip_value * pips) / balance
     return round(percentage_risk * 100, 2)
+
+
+def calculate_risk_per_trade(trade, account_balance: float, list_currencies: [str]) -> float:
+    open_price = get_open_price(trade)
+    stoploss_price = get_stoploss_price(trade)
+    instrument = get_instrument(trade)
+    initial_units = get_units_trade(trade)
+
+    if instrument in list_currencies:
+        pip_value = get_pip_value(initial_units)
+        pips = calculate_forex_pips(open_price, stoploss_price, instrument)
+    else:
+        pip_value = initial_units
+        pips = calculate_indices_pips(open_price, stoploss_price, instrument)
+
+    percentage_risk = calculate_percentage_risk(account_balance, pip_value, pips)
+
+    return percentage_risk
 
 
 if __name__ == "__main__":
     trades = OandaAPI().get_open_trades()
     balance = OandaAPI().get_account_balance()
+    list_currencies = OandaAPI().get_list_currencies()
     for trade in trades:
-        open_price = get_open_price(trade)
-        stoploss_price = get_stoploss_price(trade)
-        instrument = get_instrument(trade)
-        initial_units = get_units_trade(trade)
-        pip_value = get_pip_value(initial_units)
-
-        pips = calculate_forex_pips(open_price, stoploss_price, instrument)
-        risk = calculate_percentage_risk(balance, pip_value, pips)
-        
+        risk = calculate_risk_per_trade(trade, balance, list_currencies)
         print(risk)
