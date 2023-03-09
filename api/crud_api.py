@@ -262,7 +262,75 @@ def is_old_trade(trade, time_limit=2) -> bool:
     return False
 
 
+def get_pip_value(units):
+    micro_lot = 10000
+    pip_value = float(units) / micro_lot
+    return pip_value
+
+
+def calculate_forex_pips(open_price, stop_loss, symbol, decimal_places=4):
+    """
+    Calculates the number of pips between the stop loss and open price for any currency pair.
+
+    Parameters:
+    open_price (float): The open price of the trade.
+    stop_loss (float): The stop loss price of the trade.
+    decimal_places (int): The number of decimal places to round the pip value to. Defaults to 4.
+
+    Returns:
+    float: The number of pips between the stop loss and open price.
+    """
+    pip_multiplier = 10 ** decimal_places
+
+    # Calculate the pip value based on the currency pair's decimal places
+    if "JPY" in symbol:  # Japanese Yen currency pairs have 2 decimal places
+        pip_value = 0.01
+    elif "XAU" in symbol:  # Gold (XAU) has 2 decimal places
+        pip_value = 0.01
+    elif "XAG" in symbol:  # Silver (XAG) has 3 decimal places
+        pip_value = 0.001
+    else:  # All other currency pairs have 4 decimal places
+        pip_value = 0.0001
+
+    # Calculate the number of pips based on the pip value and decimal places
+    pips = round(abs(stop_loss - open_price) / pip_value * pip_multiplier) / pip_multiplier
+
+    # Return the number of pips rounded to the specified decimal places
+    return round(pips, decimal_places)
+
+
+def calculate_indices_pips(open_price, stop_loss, decimal_places=2, pip_value=1):
+    """
+    Calculates the number of pips between the stop loss and open price for indices like SP500, NASDAQ100, etc.
+
+    Parameters:
+    open_price (float): The open price of the trade.
+    stop_loss (float): The stop loss price of the trade.
+    decimal_places (int): The number of decimal places to round the pip value to. Defaults to 2.
+    pip_value (float): The pip value of the instrument. Defaults to 1.
+
+    Returns:
+    float: The number of pips between the stop loss and open price.
+    """
+    pip_multiplier = 10 ** decimal_places
+
+    # Calculate the number of pips based on the pip value and decimal places
+    pips = round(abs(stop_loss - open_price) / pip_value * pip_multiplier) / pip_multiplier
+
+    # Return the number of pips rounded to the specified decimal places
+    return round(pips, decimal_places)
+
+
+def get_percentage_risk(balance, pip_value, pips):
+    percentage_risk = (pip_value * pips) / balance
+    return round(percentage_risk * 100, 2)
+
+
 if __name__ == "__main__":
-    balance = OandaAPI().get_account_balance()
-    corrected_balance = round(float(balance), 2)
-    print(corrected_balance)
+    trades = OandaAPI().get_open_trades()
+    for trade in trades:
+        pips = calculate_forex_pips(float(trade["price"]), float(trade["stopLossOrder"]["price"]), trade["instrument"])
+        pip_value = float(get_pip_value(trade["initialUnits"]))
+        balance = float(OandaAPI().get_account_balance())
+        risk = get_percentage_risk(balance, pip_value, pips)
+        print(risk)
