@@ -9,6 +9,7 @@ destination_account_id = DESTINATION_ACCOUNT
 
 if __name__ == "__main__":
     print("Duplication Trading Algorithm started...")
+    list_currencies = OandaAPI().get_list_currencies()
     login_mt5()
 
     while True:
@@ -16,14 +17,14 @@ if __name__ == "__main__":
         try:
             # Check for open trades in the source account
             trades = OandaAPI(account_id=source_account_id).get_open_trades()
-            target_trades = OandaAPI(
-                account_id=destination_account_id).get_open_trades()
+            balance = OandaAPI(account_id=source_account_id).get_account_balance()
+            target_trades = OandaAPI(account_id=destination_account_id).get_open_trades()
+
             target_trade_instruments = [trade['instrument']
                                         for trade in target_trades]
 
             for trade in trades:
                 # Duplicate the trade in the OANDA destination account
-                # TODO: add script to close all opening positions for security
                 if trade['instrument'] not in target_trade_instruments and not is_old_trade(trade):
                     duplicate_trade(trade, destination_account_id)
                     duplicate_to_mt5(oanda_trade=trade, accounts=accounts)
