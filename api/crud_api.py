@@ -241,12 +241,30 @@ class OandaAPI:
             print(f"Error closing position for instrument {instrument}: {err}")
 
 
+class OandaTrade:
+    def __init__(self, trade):
+        self.trade = trade
+        self.take_profit = get_takeprofit_price(trade)
+        self.stop_loss = get_stoploss_price(trade)
+        self.stop_loss_id = get_stoploss_id(trade)
+        self.open_price = get_open_price(trade)
+        self.instrument = get_instrument(trade)
+        self.units = get_units_trade(trade)
+        self.id = get_trade_id(trade)
+        self.open_time = get_open_time(trade)
+        self.units = get_units_trade(trade)
+
+
 def get_takeprofit_price(trade):
     return float(trade["takeProfitOrder"]["price"])
 
 
 def get_stoploss_price(trade):
     return float(trade["stopLossOrder"]["price"])
+
+
+def get_stoploss_id(trade):
+    return float(trade["stopLossOrder"]["id"])
 
 
 def get_open_price(trade):
@@ -261,23 +279,30 @@ def get_instrument(trade):
     return trade["instrument"]
 
 
-def duplicate_trade(trade, units: float, destination_account_id: str):
-    stop_loss = get_stoploss_price(trade)
-    take_profit = get_takeprofit_price(trade)
-    trade_instrument = get_instrument(trade)
-
-    try:
-        response = OandaAPI(account_id=destination_account_id).create_order(
-            trade_instrument, units, stop_loss, take_profit)
-        print(
-            f"Trade {trade['id']} duplicated in target account with response: {response}")
-    except Exception as e:
-        print(f"Error duplicating trade {trade['id']}: {str(e)}")
+def get_trade_id(trade):
+    return trade["id"]
 
 
-def is_old_trade(trade, time_limit=2) -> bool:
+def get_open_time(trade):
+    return trade["openTime"]
+
+
+def duplicate_to_oanda(trade_id, instrument, stop_loss, take_profit, lots, oanda_accounts):
+    for account in oanda_accounts:
+        try:
+            target_balance = OandaAPI(account_id=account).get_account_balance()
+            units = lots.calculate_units_per_trade(target_balance)
+            response = OandaAPI(account_id=account).create_order(
+                instrument, units, stop_loss, take_profit)
+            print(
+                f"Trade {trade_id} duplicated in target account with response: {response}")
+        except Exception as e:
+            print(f"Error duplicating trade {trade_id}: {str(e)}")
+
+
+def is_old_trade(trade: OandaTrade, time_limit: int = 2) -> bool:
     # get the time the trade was opened
-    trade_time_str = trade["openTime"]
+    trade_time_str = trade.open_time
 
     # parse the datetime string without microseconds
     trade_time_obj = datetime.datetime.strptime(trade_time_str[:-4], "%Y-%m-%dT%H:%M:%S.%f")

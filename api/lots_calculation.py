@@ -1,5 +1,5 @@
 from typing import List
-from api.crud_api import get_instrument, get_open_price, get_stoploss_price, get_units_trade
+from api.crud_api import OandaTrade
 
 
 def is_currency_pair(instrument: str, list_currencies: List[str]) -> bool:
@@ -18,12 +18,12 @@ def convert_volume_to_units(volume: float) -> float:
 
 
 class LotsCalculation:
-    def __init__(self, trade, is_currency: bool, source_account_balance: float) -> None:
-        self.open_price = get_open_price(trade)
-        self.stoploss = get_stoploss_price(trade)
-        self.instrument = get_instrument(trade)
+    def __init__(self, trade: OandaTrade, is_currency: bool, source_account_balance: float) -> None:
+        self.open_price = trade.open_price
+        self.stoploss = trade.stop_loss
+        self.instrument = trade.instrument
         self.is_currency = is_currency
-        self.units = get_units_trade(trade)
+        self.units = trade.units
         self.mini_lots = 10000
         self.source_account_balance = source_account_balance
         self.pips = self.calculate_pips()

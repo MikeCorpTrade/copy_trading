@@ -68,7 +68,7 @@ def update_stoploss_mt5(open_trade):
 
 
 if __name__ == "__main__":
-    print("Update Stoploss MT5 Algorithm started...")
+    print("Update Stop_loss MT5 Algorithm started...")
     start_mt5()
 
     while True:
