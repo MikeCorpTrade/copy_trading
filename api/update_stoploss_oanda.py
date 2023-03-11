@@ -41,7 +41,7 @@ def update_stoploss(trade):
 account_ids = [SOURCE_ACCOUNT, DESTINATION_ACCOUNT]
 
 if __name__ == "__main__":
-    print("Update Stoploss Algorithm started...")
+    print("Update Stoploss Oanda Algorithm started...")
 
     while True:
 

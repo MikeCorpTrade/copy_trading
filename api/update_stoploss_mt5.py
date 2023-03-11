@@ -1,6 +1,6 @@
 import MetaTrader5 as mt5
 
-from api.map_oanda_mt5 import login_mt5
+from api.map_oanda_mt5 import start_mt5
 from api.mt5_accounts import accounts
 
 
@@ -68,11 +68,17 @@ def update_stoploss_mt5(open_trade):
 
 
 if __name__ == "__main__":
+    print("Update Stoploss MT5 Algorithm started...")
+    start_mt5()
 
-    login_mt5()
+    while True:
 
-    for account in accounts:
-        mt5.login(login=account.login, password=account.password, server=account.server)
-        open_trades = mt5.positions_get()
-        for open_trade in open_trades:
-            update_stoploss_mt5(open_trade)
+        try:
+            for account in accounts:
+                mt5.login(login=account.login, password=account.password, server=account.server)
+                open_trades = mt5.positions_get()
+                for open_trade in open_trades:
+                    update_stoploss_mt5(open_trade)
+
+        except Exception as error:
+            print("An error occurred:", error)
