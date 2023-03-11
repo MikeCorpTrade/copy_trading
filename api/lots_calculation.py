@@ -10,7 +10,8 @@ def is_currency_pair(instrument: str, list_currencies: List[str]) -> bool:
 
 
 def convert_units_to_volume(units: float) -> float:
-    return round(units / 100000, 2)
+    factor = 100000
+    return round(units / factor, 2)
 
 
 def convert_volume_to_units(volume: float) -> float:
@@ -20,7 +21,7 @@ def convert_volume_to_units(volume: float) -> float:
 class LotsCalculation:
     def __init__(self, trade: OandaTrade, is_currency: bool, source_account_balance: float) -> None:
         self.open_price = trade.open_price
-        self.stoploss = trade.stop_loss
+        self.stop_loss = trade.stop_loss
         self.instrument = trade.instrument
         self.is_currency = is_currency
         self.units = trade.units
@@ -65,7 +66,7 @@ class LotsCalculation:
             pip_reference = 0.0001
 
         # Calculate the number of pips based on the pip value and decimal places
-        pips = round(abs(self.stoploss - self.open_price) / pip_reference * pip_multiplier) / pip_multiplier
+        pips = round(abs(self.stop_loss - self.open_price) / pip_reference * pip_multiplier) / pip_multiplier
 
         # Return the number of pips rounded to the specified decimal places
         return round(pips, decimal_places)
@@ -87,7 +88,7 @@ class LotsCalculation:
         pip_multiplier = 10 ** decimal_places
 
         # Calculate the number of pips based on the pip value and decimal places
-        pips = round(abs(self.stoploss - self.open_price))
+        pips = round(abs(self.stop_loss - self.open_price))
 
         # Return the number of pips rounded to the specified decimal places
         return round(pips, decimal_places)

@@ -4,11 +4,9 @@ import datetime
 import pytz
 from constants import BASE_URL, API_KEY, SOURCE_ACCOUNT
 
-account_id = SOURCE_ACCOUNT
-
 
 class OandaAPI:
-    def __init__(self, api_key: str = API_KEY, account_id: str = account_id) -> None:
+    def __init__(self, api_key: str = API_KEY, account_id: str = SOURCE_ACCOUNT) -> None:
         self.api_key = api_key
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",

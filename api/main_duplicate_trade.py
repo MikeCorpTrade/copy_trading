@@ -1,3 +1,4 @@
+import MetaTrader5 as mt5
 from api.lots_calculation import is_currency_pair, LotsCalculation
 from api.map_oanda_mt5 import start_mt5, duplicate_to_mt5, map_order_oanda_to_mt5
 from api.mt5_accounts import accounts as mt5_accounts
@@ -33,11 +34,12 @@ if __name__ == "__main__":
                     is_currency = is_currency_pair(trade_instrument, list_currencies)
                     lots = LotsCalculation(oanda_trade, is_currency, source_balance)
 
-                    # Duplicate the trade in the OANDA destination account
+                    # Duplicate the trade in the OANDA target accounts
                     duplicate_to_oanda(trade_id, trade_instrument, stop_loss, take_profit, lots, oanda_accounts)
 
                     # Map oanda order to mt5
-                    mt5_trade_request = map_order_oanda_to_mt5(trade_instrument, stop_loss, take_profit)
+                    order_type = mt5.ORDER_TYPE_BUY if lots.units > 0 else mt5.ORDER_TYPE_SELL
+                    mt5_trade_request = map_order_oanda_to_mt5(order_type, trade_instrument, stop_loss, take_profit)
                     duplicate_to_mt5(mt5_trade=mt5_trade_request, mt5_accounts=mt5_accounts, lots=lots)
 
         except Exception as error:
