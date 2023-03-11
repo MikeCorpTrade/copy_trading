@@ -1,25 +1,21 @@
-from api.lots_calculation import is_currency_pair, LotsCalculation
+import MetaTrader5 as mt5
+from api.map_oanda_mt5 import start_mt5
 from constants import SOURCE_ACCOUNT, DESTINATION_ACCOUNT
-from api.crud_api import OandaAPI
+from api.mt5_accounts import accounts as mt5_accounts
+
 
 # Example usage
 source_account_id = SOURCE_ACCOUNT
 destination_account_id = DESTINATION_ACCOUNT
 
 if __name__ == "__main__":
-    list_currencies = OandaAPI().get_list_currencies()
+    start_mt5()
 
-    while True:
+    try:
+        for account in mt5_accounts:
+            mt5.login(login=account.login, password=account.password, server=account.server)
+            mt5_account_balance = mt5.account_info().balance
+            print(mt5_account_balance)
 
-        try:
-            # Check for open trades in the source account
-            trades = OandaAPI(account_id=source_account_id).get_open_trades()
-            source_balance = OandaAPI(account_id=source_account_id).get_account_balance()
-
-            for trade in trades:
-                is_currency = is_currency_pair(trade["instrument"], list_currencies)
-                risk = LotsCalculation(trade, is_currency, source_balance).risk
-                print(risk)
-
-        except Exception as error:
-            print("An error occurred:", error)
+    except Exception as error:
+        print("An error occurred:", error)

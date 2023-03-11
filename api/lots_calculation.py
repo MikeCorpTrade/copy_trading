@@ -1,11 +1,20 @@
+from typing import List
 from api.crud_api import get_instrument, get_open_price, get_stoploss_price, get_units_trade
 
 
-def is_currency_pair(instrument: str, list_currencies) -> bool:
+def is_currency_pair(instrument: str, list_currencies: List[str]) -> bool:
     if instrument in list_currencies:
         return True
     else:
         return False
+
+
+def convert_units_to_volume(units: float) -> float:
+    return round(units / 100000, 2)
+
+
+def convert_volume_to_units(volume: float) -> float:
+    return volume * 100000
 
 
 class LotsCalculation:
@@ -61,7 +70,7 @@ class LotsCalculation:
         # Return the number of pips rounded to the specified decimal places
         return round(pips, decimal_places)
 
-    def calculate_indices_pips(self, decimal_places=2) -> float:
+    def calculate_indices_pips(self, decimal_places: int = 2) -> float:
         """
         Calculates the number of pips between the stop loss and open price for indices like SP500, NASDAQ100, etc.
 
