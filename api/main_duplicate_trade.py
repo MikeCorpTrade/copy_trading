@@ -24,7 +24,7 @@ if __name__ == "__main__":
                 oanda_trade = OandaTrade(trade)
                 trade_instrument = oanda_trade.instrument
 
-                if trade_instrument not in target_trade_instruments and not is_old_trade(trade):
+                if trade_instrument not in target_trade_instruments and not is_old_trade(oanda_trade):
 
                     # Get trade basic infos
                     stop_loss = oanda_trade.stop_loss

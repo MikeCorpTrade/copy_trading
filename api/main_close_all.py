@@ -32,6 +32,7 @@ def close_all_mt5(accounts):
 
     for mt5_account in accounts:
         try:
+            mt5.login(login=mt5_account.login, password=mt5_account.password, server=mt5_account.server)
             # get all open positions
             positions = mt5.positions_get()
 

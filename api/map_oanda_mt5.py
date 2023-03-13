@@ -50,3 +50,5 @@ def duplicate_to_mt5(mt5_trade, mt5_accounts, lots):
                   f'with response: {order_result.comment}')
         except Exception as e:
             print(f'Error duplicating trade {mt5_trade["symbol"]}: {str(e)}')
+
+    mt5.shutdown()

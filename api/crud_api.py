@@ -289,7 +289,7 @@ def duplicate_to_oanda(trade_id, instrument, stop_loss, take_profit, lots, oanda
     for account in oanda_accounts:
         try:
             target_balance = OandaAPI(account_id=account).get_account_balance()
-            units = lots.calculate_units_per_trade(target_balance)
+            units = int(lots.calculate_units_per_trade(target_balance))
             response = OandaAPI(account_id=account).create_order(
                 instrument, units, stop_loss, take_profit)
             print(
