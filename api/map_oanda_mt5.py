@@ -44,7 +44,7 @@ def duplicate_to_mt5(mt5_trade, mt5_accounts, lots):
             mt5_account_balance = mt5.account_info().balance
             account_balance_units = lots.calculate_units_per_trade(mt5_account_balance)
             volume = convert_units_to_volume(account_balance_units)
-            mt5_trade["volume"] = volume
+            mt5_trade["volume"] = abs(volume)
             order_result = mt5.order_send(mt5_trade)
             print(f'Trade {mt5_trade["symbol"]} duplicated success in MT5 account {account.login} '
                   f'with response: {order_result.comment}')

@@ -8,7 +8,6 @@ from api.crud_api import OandaAPI, duplicate_to_oanda, is_old_trade, get_instrum
 if __name__ == "__main__":
     print("Duplication Trading Algorithm started...")
     list_currencies = OandaAPI().get_list_currencies()
-    start_mt5()
 
     while True:
 
@@ -21,10 +20,12 @@ if __name__ == "__main__":
                                         for trade in target_trades]
 
             for trade in source_trades:
-                oanda_trade = OandaTrade(trade)
-                trade_instrument = oanda_trade.instrument
 
-                if trade_instrument not in target_trade_instruments and not is_old_trade(oanda_trade):
+                trade_instrument = get_instrument(trade)
+
+                if trade_instrument not in target_trade_instruments and not is_old_trade(trade):
+
+                    oanda_trade = OandaTrade(trade)
 
                     # Get trade basic infos
                     stop_loss = oanda_trade.stop_loss
@@ -38,6 +39,7 @@ if __name__ == "__main__":
                     duplicate_to_oanda(trade_id, trade_instrument, stop_loss, take_profit, lots, oanda_accounts)
 
                     # Map oanda order to mt5
+                    start_mt5()
                     order_type = mt5.ORDER_TYPE_BUY if lots.units > 0 else mt5.ORDER_TYPE_SELL
                     mt5_trade_request = map_order_oanda_to_mt5(order_type, trade_instrument, stop_loss, take_profit)
                     duplicate_to_mt5(mt5_trade=mt5_trade_request, mt5_accounts=mt5_accounts, lots=lots)

@@ -298,9 +298,9 @@ def duplicate_to_oanda(trade_id, instrument, stop_loss, take_profit, lots, oanda
             print(f"Error duplicating trade {trade_id}: {str(e)}")
 
 
-def is_old_trade(trade: OandaTrade, time_limit: int = 2) -> bool:
+def is_old_trade(trade, time_limit: int = 2) -> bool:
     # get the time the trade was opened
-    trade_time_str = trade.open_time
+    trade_time_str = get_open_time(trade)
 
     # parse the datetime string without microseconds
     trade_time_obj = datetime.datetime.strptime(trade_time_str[:-4], "%Y-%m-%dT%H:%M:%S.%f")
