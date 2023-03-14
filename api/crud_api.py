@@ -4,11 +4,9 @@ import datetime
 import pytz
 from constants import BASE_URL, API_KEY, SOURCE_ACCOUNT
 
-account_id = SOURCE_ACCOUNT
-
 
 class OandaAPI:
-    def __init__(self, api_key=API_KEY, account_id=account_id) -> None:
+    def __init__(self, api_key: str = API_KEY, account_id: str = SOURCE_ACCOUNT) -> None:
         self.api_key = api_key
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -18,7 +16,7 @@ class OandaAPI:
 
     # GET
 
-    def get_current_price(self, instrument):
+    def get_current_price(self, instrument: str) -> float:
         """
         Get the current price of the given instrument from Oanda API
         """
@@ -47,7 +45,7 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error getting orders : {err}")
 
-    def get_order(self, order_id):
+    def get_order(self, order_id: str):
         """
         Get the details of the given order from Oanda API
         """
@@ -61,7 +59,7 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error getting order ID {order_id}: {err}")
 
-    def get_instrument_trade(self, instrument):
+    def get_instrument_trade(self, instrument: str):
         """
         Get the opening trade object of an instrument from Oanda API
         """
@@ -71,13 +69,14 @@ class OandaAPI:
             response = requests.get(url, headers=self.headers)
             data = json.loads(response.text)
             for trade in data['trades']:
-                if trade['instrument'] == instrument:
+                trade_instrument = get_instrument(trade)
+                if trade_instrument == instrument:
                     return trade
         except requests.exceptions.HTTPError as err:
             print(
                 f"Error retrieving trade ID for {instrument} : {err}")
 
-    def get_stoploss_order_id(self, instrument):
+    def get_stoploss_order_id(self, instrument: str):
         """
         Get the ID of the stoploss order of an instrument from Oanda API
         """
@@ -87,7 +86,8 @@ class OandaAPI:
             response = requests.get(url, headers=self.headers)
             data = json.loads(response.text)
             for trade in data['trades']:
-                if trade['instrument'] == instrument:
+                trade_instrument = get_instrument(trade)
+                if trade_instrument == instrument:
                     return trade['stopLossOrder']['id']
         except requests.exceptions.HTTPError as err:
             print(
@@ -107,9 +107,38 @@ class OandaAPI:
         except requests.exceptions.HTTPError as error:
             return {"Error getting open Trades": error}
 
+    def get_list_currencies(self):
+        """
+        Get a list of currencies tradeable from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}/instruments"
+
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            instruments = response.json()['instruments']
+            forex_pairs = [instrument['name'] for instrument in instruments if instrument['type'] == 'CURRENCY']
+            return forex_pairs
+        except requests.exceptions.HTTPError as err:
+            print(f"Error getting list of currencies : {err}")
+
+    def get_account_balance(self):
+        """
+        Get the balance of an account from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}"
+
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            balance_account = response.json()["account"]["balance"]
+            return float(balance_account)
+        except requests.exceptions.HTTPError as error:
+            return {"Error getting open Trades": error}
+
     # CREATE
 
-    def create_order(self, instrument, units, stop_loss, take_profit):
+    def create_order(self, instrument: str, units: float, stop_loss: float, take_profit: float):
         url = f"{BASE_URL}{self.account_id}/orders"
 
         data = {
@@ -136,7 +165,7 @@ class OandaAPI:
 
     # UPDATE
 
-    def update_stoploss_order_v1(self, instrument, stop_loss):
+    def update_stoploss_order_v1(self, instrument: str, stop_loss: float):
         """
         Update the stop loss of a given order in Oanda API by only through instrument
         """
@@ -164,7 +193,7 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
-    def update_stoploss_order_v2(self, trade_id, stoploss_order_id, stop_loss):
+    def update_stoploss_order_v2(self, trade_id, stoploss_order_id, stop_loss: float):
         """
         Version 2 of the update_stoploss_order : Update the stop loss of a given order in Oanda API
         Please, provide the trade_id, the stoploss_order_id and the new stop_loss.
@@ -189,22 +218,89 @@ class OandaAPI:
         except requests.exceptions.HTTPError as err:
             print(f"Error updating stop loss for trade ID {trade_id}: {err}")
 
+    # DELETE
+    def close_positions(self, instrument: str, type: str):
+        """
+        Close all open positions of an account from Oanda API
+        """
+        url = f"{BASE_URL}{self.account_id}/positions/{instrument}/close"
 
-def duplicate_trade(trade, destination_account_id):
-    stop_loss = trade["stopLossOrder"]["price"]
-    take_profit = trade["takeProfitOrder"]["price"]
-    try:
-        response = OandaAPI(account_id=destination_account_id).create_order(
-            trade["instrument"], trade["currentUnits"], stop_loss, take_profit)
-        print(
-            f"Trade {trade['id']} duplicated in target account with response: {response}")
-    except Exception as e:
-        print(f"Error duplicating trade {trade['id']}: {str(e)}")
+        if type == "buy":
+            data = {"longUnits": "ALL"}
+        else:
+            data = {"shortUnits": "ALL"}
+
+        try:
+            response = requests.put(
+                url, headers=self.headers, data=json.dumps(data))
+            response.raise_for_status()
+            print(f"Position closed for instrument {instrument}")
+        except requests.exceptions.HTTPError as err:
+            print(f"Error closing position for instrument {instrument}: {err}")
 
 
-def is_old_trade(trade, time_limit=2) -> bool:
+class OandaTrade:
+    def __init__(self, trade):
+        self.trade = trade
+        self.take_profit = get_takeprofit_price(trade)
+        self.stop_loss = get_stoploss_price(trade)
+        self.stop_loss_id = get_stoploss_id(trade)
+        self.open_price = get_open_price(trade)
+        self.instrument = get_instrument(trade)
+        self.units = get_units_trade(trade)
+        self.id = get_trade_id(trade)
+        self.open_time = get_open_time(trade)
+        self.units = get_units_trade(trade)
+
+
+def get_takeprofit_price(trade):
+    return float(trade["takeProfitOrder"]["price"])
+
+
+def get_stoploss_price(trade):
+    return float(trade["stopLossOrder"]["price"])
+
+
+def get_stoploss_id(trade):
+    return float(trade["stopLossOrder"]["id"])
+
+
+def get_open_price(trade):
+    return float(trade["price"])
+
+
+def get_units_trade(trade):
+    return float(trade["initialUnits"])
+
+
+def get_instrument(trade):
+    return trade["instrument"]
+
+
+def get_trade_id(trade):
+    return trade["id"]
+
+
+def get_open_time(trade):
+    return trade["openTime"]
+
+
+def duplicate_to_oanda(trade_id, instrument, stop_loss, take_profit, lots, oanda_accounts):
+    for account in oanda_accounts:
+        try:
+            target_balance = OandaAPI(account_id=account).get_account_balance()
+            units = int(lots.calculate_units_per_trade(target_balance))
+            response = OandaAPI(account_id=account).create_order(
+                instrument, units, stop_loss, take_profit)
+            print(
+                f"Trade {trade_id} duplicated in target account with response: {response}")
+        except Exception as e:
+            print(f"Error duplicating trade {trade_id}: {str(e)}")
+
+
+def is_old_trade(trade, time_limit: int = 2) -> bool:
     # get the time the trade was opened
-    trade_time_str = trade["openTime"]
+    trade_time_str = get_open_time(trade)
 
     # parse the datetime string without microseconds
     trade_time_obj = datetime.datetime.strptime(trade_time_str[:-4], "%Y-%m-%dT%H:%M:%S.%f")
