@@ -5,7 +5,11 @@ from api.mt5_constants import mt5_COEFF, MAGIC, DEVIATION
 from api.oanda_mt5_symbols import oanda_mt5_symbols, oanda_mt5_coeffs
 
 
-def start_mt5():
+def start_mt5() -> None:
+    """
+    Initialize the mt5 application with python
+    :return: None
+    """
     try:
         authorized = mt5.initialize()
         print(f"MT5 initialized: {authorized}")
@@ -13,7 +17,12 @@ def start_mt5():
         print(f"Failed to initialize MT5: {error}")
 
 
-def enable_symbol(symbol: str):
+def enable_symbol(symbol: str) -> None:
+    """
+    Check if a symbol is enabled in mt5 application. If not, it will enable it for trading
+    :param symbol: the symbol traded
+    :return: None
+    """
     # check if the symbol is available for trading
     symbol_info = mt5.symbol_info(symbol)
     if not symbol_info.visible:
@@ -25,7 +34,7 @@ def enable_symbol(symbol: str):
 def map_order_oanda_to_mt5(order_type: int, oanda_instrument: str, stop_loss: float, take_profit: float):
     """
     Map the Oanda trade order to MT5 format
-    :param order_type: 0 if buy, 1 if sell
+    :param order_type: 0 if BUY order, 1 if SELL order (see mt5 docs)
     :param oanda_instrument: the instrument traded
     :param stop_loss: stop loss price
     :param take_profit: take profit price
@@ -56,9 +65,15 @@ def map_order_oanda_to_mt5(order_type: int, oanda_instrument: str, stop_loss: fl
     return mt5_trade_order
 
 
-def duplicate_to_mt5(mt5_trade, mt5_accounts: list[Account], lots: LotsCalculation):
+def duplicate_to_mt5(mt5_trade, mt5_accounts: list[Account], lots: LotsCalculation) -> None:
+    """
+    Duplicate an order mapped from oanda to mt5 accounts
+    :param mt5_trade: trade object obtained with map_order_oanda_to_mt5 function
+    :param mt5_accounts: list of mt5 accounts
+    :param lots: lots object
+    :return: None
+    """
 
-    # Send order to mt5
     for account in mt5_accounts:
         try:
             mt5.login(login=account.login, password=account.password, server=account.server)

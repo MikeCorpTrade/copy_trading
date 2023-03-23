@@ -139,6 +139,15 @@ class OandaAPI:
     # CREATE
 
     def create_order(self, instrument: str, units: float, stop_loss: float, take_profit: float):
+        """
+        Create an Oanda market order
+        :param instrument: the instrument traded
+        :param units: desired units
+        :param stop_loss: stop loss price
+        :param take_profit: take profit price
+        :return: the response as json format if it is successfull or not
+        """
+
         url = f"{BASE_URL}{self.account_id}/orders"
 
         data = {
