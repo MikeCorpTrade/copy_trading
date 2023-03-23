@@ -9,8 +9,7 @@ def is_currency_pair(instrument: str, list_currencies: List[str]) -> bool:
         return False
 
 
-def convert_units_to_volume(units: float) -> float:
-    factor = 100000
+def convert_units_to_volume(units: float, factor: int = 100000) -> float:
     return round(units / factor, 2)
 
 
