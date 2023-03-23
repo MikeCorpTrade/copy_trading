@@ -11,21 +11,15 @@ if __name__ == "__main__":
         account = mt5_accounts[0]
         mt5.login(login=account.login, password=account.password, server=account.server)
 
-        # groups = ['Forex', 'CFD', 'Futures', 'Bonds', 'Crypto', 'Stocks']
-        groups = ['*USD']
+        # get all available symbols
+        symbols = mt5.symbols_get()
 
-        for group in groups:
+        # filter out non-tradable symbols
+        tradable_symbols = [s for s in symbols if s.trade_mode == mt5.SYMBOL_TRADE_MODE_FULL]
 
-            # get all available symbols
-            symbols = mt5.symbols_get(group=group)
-
-            # filter out non-tradable symbols
-            tradable_symbols = [s for s in symbols if s.trade_mode == mt5.SYMBOL_TRADE_MODE_FULL]
-
-            print(f"Symbols available for {group}:")
-            # print the list of tradable symbols
-            for s in tradable_symbols:
-                print(s.name)
+        # print the list of tradable symbols
+        for s in tradable_symbols:
+            print(s.name)
 
         mt5.shutdown()
 

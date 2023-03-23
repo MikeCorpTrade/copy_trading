@@ -1,12 +1,12 @@
 from api.crud_api import OandaAPI
 from constants import SOURCE_ACCOUNT, DESTINATION_ACCOUNT
 import MetaTrader5 as mt5
-from mt5_accounts import accounts as mt5_accounts
+from mt5_accounts import accounts as mt5_accounts, Account
 
 oanda_accounts = [SOURCE_ACCOUNT, DESTINATION_ACCOUNT]
 
 
-def close_all_oanda(accounts):
+def close_all_oanda(accounts: list[str]):
     for oanda_account in accounts:
         try:
             # Check for open trades in the source account
@@ -24,7 +24,7 @@ def close_all_oanda(accounts):
             print("An error occurred:", error)
 
 
-def close_all_mt5(accounts):
+def close_all_mt5(accounts: list[Account]):
     # connect to the MetaTrader 5 terminal
     if not mt5.initialize():
         print("initialize() failed, error code =", mt5.last_error())
@@ -59,7 +59,7 @@ def close_all_mt5(accounts):
                     "price": price,
                     "comment": "python script close",
                     "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": mt5.ORDER_FILLING_IOC,
+                    "type_filling": mt5.ORDER_FILLING_FOK,
                 })
 
                 # check if the order was closed successfully
